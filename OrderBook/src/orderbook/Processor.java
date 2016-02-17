@@ -8,6 +8,9 @@ package orderbook;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -21,7 +24,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author yerzhan
  */
-public class Processor extends DefaultHandler {
+class Processor extends DefaultHandler {
 
     private static final String ATTR_BOOK = "book";
     private static final String ATTR_OPERATION = "operation";
@@ -44,20 +47,24 @@ public class Processor extends DefaultHandler {
 
     private final String fileName;
 
-    public Processor(String fileName) {
+    private final HashMap<String, Orders> bookOrders = new HashMap<>();
+
+    Processor(String fileName) {
         this.fileName = fileName;
     }
 
-    public void process() throws ParserConfigurationException, SAXException, FileNotFoundException, IOException {
+    void process() throws ParserConfigurationException, SAXException, FileNotFoundException, IOException {
         SAXParserFactory spf = SAXParserFactory.newInstance();
         spf.setNamespaceAware(true);
         SAXParser sp = spf.newSAXParser();
         XMLReader xr = sp.getXMLReader();
         xr.setContentHandler(this);
-        xr.parse(new InputSource(new FileInputStream(fileName)));
+        try (FileInputStream is = new FileInputStream(fileName)) {
+            xr.parse(new InputSource(is));
+        }
     }
 
-    public void showResults() {
+    void showResults() {
 
     }
 
@@ -65,21 +72,29 @@ public class Processor extends DefaultHandler {
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         switch (Actions.valueOf(localName)) {
             case AddOrder:
-                int orderId = Integer.valueOf(attributes.getValue(ATTR_ORDER_ID));
+                Integer id = Integer.valueOf(attributes.getValue(ATTR_ORDER_ID));
                 String book = attributes.getValue(ATTR_BOOK);
                 Operations operation = Operations.valueOf(attributes.getValue(ATTR_OPERATION));
-                double price = Double.valueOf(attributes.getValue(ATTR_PRICE));
-                int volume = Integer.valueOf(attributes.getValue(ATTR_VOLUME));
+                Double price = Double.valueOf(attributes.getValue(ATTR_PRICE));
+                Integer volume = Integer.valueOf(attributes.getValue(ATTR_VOLUME));
 
-                add(book, operation, price, volume, orderId);
+                try {
+                    add(book, operation, price, volume, id);
+                } catch (OrdersException ex) {
+                    throw new SAXException(ex);
+                }
 
                 break;
 
             case DeleteOrder:
-                orderId = Integer.valueOf(attributes.getValue(ATTR_ORDER_ID));
+                id = Integer.valueOf(attributes.getValue(ATTR_ORDER_ID));
                 book = attributes.getValue(ATTR_BOOK);
 
-                delete(book, orderId);
+                try {
+                    delete(book, id);
+                } catch (OrdersException ex) {
+                    throw new SAXException(ex);
+                }
 
                 break;
 
@@ -91,11 +106,28 @@ public class Processor extends DefaultHandler {
         }
     }
 
-    private void add(String book, Operations operation, double price, int volume, int orderId) {
+    private void add(String book, Operations operation, Double price, Integer volume, Integer id) throws OrdersException {
+        if (!bookOrders.containsKey(book)) {
+            bookOrders.put(book, new Orders());
+        }
 
+        Orders o = bookOrders.get(book);
+
+        switch (operation) {
+            case BUY:
+                o.addToBids(id, price, volume);
+                break;
+
+            case SELL:
+                o.addToAsks(id, price, volume);
+                break;
+
+            default:
+                throw new AssertionError();
+        }
     }
 
-    private void delete(String book, int orderId) {
-
+    private void delete(String book, Integer id) throws OrdersException {
+        bookOrders.get(book).delete(id);
     }
 }
