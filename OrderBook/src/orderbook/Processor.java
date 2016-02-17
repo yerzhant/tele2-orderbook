@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
@@ -65,7 +66,11 @@ class Processor extends DefaultHandler {
     }
 
     void showResults() {
-
+        for (Map.Entry<String, Orders> e : bookOrders.entrySet()) {
+            System.out.println("Order book: " + e.getKey());
+            e.getValue().printOut();
+            System.out.println("");
+        }
     }
 
     @Override
