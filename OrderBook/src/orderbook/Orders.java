@@ -25,10 +25,10 @@ class Orders {
     private final TreeSet<Order> sortedBids = new TreeSet<>(new BidComparator());
     private final TreeSet<Order> sortedAsks = new TreeSet<>(new AskComparator());
 
-    void addToBids(Integer id, Double price, Integer volume) throws OrdersException {
-        if (bids.containsKey(id)) {
-            throw new OrdersException("Bids already contains the key " + id);
-        }
+    void addToBids(Integer id, Double price, Integer volume) {//throws OrdersException {
+//        if (bids.containsKey(id)) {
+//            throw new OrdersException("Bids already contains the key " + id);
+//        }
 
         final Set<Order> toBeRemoved = new HashSet<>();
 
@@ -60,10 +60,10 @@ class Orders {
         }
     }
 
-    void addToAsks(Integer id, Double price, Integer volume) throws OrdersException {
-        if (asks.containsKey(id)) {
-            throw new OrdersException("Asks already contains the key " + id);
-        }
+    void addToAsks(Integer id, Double price, Integer volume) {//throws OrdersException {
+//        if (asks.containsKey(id)) {
+//            throw new OrdersException("Asks already contains the key " + id);
+//        }
 
         final Set<Order> toBeRemoved = new HashSet<>();
 
@@ -95,10 +95,10 @@ class Orders {
         }
     }
 
-    void delete(Integer id) throws OrdersException {
-        if (bids.containsKey(id) && asks.containsKey(id)) {
-            throw new OrdersException("The key " + id + " exists in both lists");
-        }
+    void delete(Integer id) {//throws OrdersException {
+//        if (bids.containsKey(id) && asks.containsKey(id)) {
+//            throw new OrdersException("The key " + id + " exists in both lists");
+//        }
 
         if (bids.containsKey(id)) {
             sortedBids.remove(bids.remove(id));
